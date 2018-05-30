@@ -7,7 +7,7 @@ mkdir $DIR
 
 cp metadata.json $DIR
 cp *.js $DIR
-zip -r $DIR.zip $DIR
+zip -jr $DIR.zip $DIR
 
 rm -rf $DIR
 
