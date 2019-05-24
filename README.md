@@ -1,7 +1,7 @@
-# 'Current screen only' for Aternate Tab
+# Current screen only in windows switcher
 
-This is a Gnome Shell extension. It allows to cycle through windows (Alt+Tab) filtered per monitor.
+This is a Gnome Shell extension.
 
-It depends on the Alternate Tab extension - which provide the cycling through windows instead of applications, and filters the windows shown to those of the current monitor.
+It filters the windows shown in the window switcher to those of the current monitor.
 
 You can enable it from its page on the Gnome extensions site: https://extensions.gnome.org/extension/1437/current-screen-only-for-alternate-tab/
