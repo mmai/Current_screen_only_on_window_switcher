@@ -1,7 +1,7 @@
 {
-  "name": "Current screen only for Alternate Tab",
-  "description": "Needs the Alternate Tab extension. Limits the windows shown to those of the current monitor",
-  "url": "https://github.com/mmai/Current_screen_only_for_Aternate_Tab",
+  "name": "Current screen only on window switcher",
+  "description": "Limits the windows shown on the switcher to those of the current monitor",
+  "url": "https://github.com/mmai/Current_screen_only_on_window_switcher",
   "uuid": "Current_screen_only_for_Alternate_Tab@bourcereau.fr",
   "shell-version": ["3.30","3.32"]
 }
