@@ -1,221 +1,161 @@
 const { GObject } = imports.gi;
 
-const Main = imports.ui.main;
-const Layout = imports.ui.layout;
-const AltTab = imports.ui.altTab;
-const Config = imports.misc.config;
+const PACKAGE_VERSION = imports.misc.config.PACKAGE_VERSION;
+const altTab = imports.ui.altTab;
+const main = imports.ui.main;
 
 let injections = {};
-let enabled = false;
-let loaded = false;
 
-function l() {
-  // hide debug
-  if (true) {
-    return;
+function enable() {
+  if (cmpVersions(PACKAGE_VERSION, '3.32') < 0){
+    enable_older();
+  } else {
+    enable_3_32();
   }
-
-  let args = Array.from(arguments);
-  args.unshift('alttab_current_monitor');
-  log.apply(this, args);
 }
 
-function load_3_32() {
-  l('loading 3.32 code');
+function disable() {
+  if (cmpVersions(PACKAGE_VERSION, '3.32') < 0){
+    disable_older();
+  } else {
+    disable_3_32();
+  } 
+}
 
-  injections['getWindows'] = AltTab.getWindows;
-  AltTab.getWindows = function() {
+/*******************************
+ *   gnome-shell >= 3.32       *
+ *******************************/
+
+function enable_3_32() {
+  injections['getWindows'] = altTab.getWindows;
+  altTab.getWindows = function() {
     let allWindows = injections['getWindows'].apply(this, arguments);
-
-    if (!enabled) {
-      return allWindows;
-    }
-
-    return allWindows.filter(w => w.get_monitor() === global.display.get_current_monitor());
+    return allWindows.filter(w => w.get_monitor() === getCurrentMonitor());
   }
 
-  AltTab.WindowSwitcherPopup = GObject.registerClass(
-  class CurrentMonitorWindowSwitcherPopup extends AltTab.WindowSwitcherPopup {
+  injections['windowSwitcherPopup'] = altTab.WindowSwitcherPopup;
+  altTab.windowSwitcherPopup = GObject.registerClass(
+  class CurrentMonitorWindowSwitcherPopup extends altTab.windowSwitcherPopup {
     vfunc_allocate() {
-      if (!enabled) {
-        return super.vfunc_allocate.apply(this, arguments);
-      }
-
-      l('CurrentMonitorWindowSwitcherPopup vfunc_allocate');
-
-      let originalPrimaryMonitor = Main.layoutManager.primaryMonitor;
-      Main.layoutManager.primaryMonitor = Main.layoutManager.currentMonitor;
-
+      let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+      main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
       let response = super.vfunc_allocate.apply(this, arguments);
-
-      Main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-
+      main.layoutManager.primaryMonitor = originalPrimaryMonitor;
       return response;
     }
   });
 
-  AltTab.AppSwitcherPopup = GObject.registerClass(
-  class CurrentMonitorAppSwitcherPopup extends AltTab.AppSwitcherPopup {
+  injections['appSwitcherPopup'] = altTab.AppSwitcherPopup;
+  altTab.AppSwitcherPopup = GObject.registerClass(
+  class CurrentMonitorAppSwitcherPopup extends altTab.AppSwitcherPopup {
     vfunc_allocate() {
-      if (!enabled) {
-        return super.vfunc_allocate.apply(this, arguments);
-      }
-
-      l('CurrentMonitorAppSwitcherPopup vfunc_allocate');
-
-      let originalPrimaryMonitor = Main.layoutManager.primaryMonitor;
-      Main.layoutManager.primaryMonitor = Main.layoutManager.currentMonitor;
-
+      let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+      main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
       let response = super.vfunc_allocate.apply(this, arguments);
-
-      Main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-
+      main.layoutManager.primaryMonitor = originalPrimaryMonitor;
       return response;
     }
   });
 
-  AltTab.AppSwitcher = GObject.registerClass(
-  class CurrentMonitorAppSwitcher extends AltTab.AppSwitcher {
+  injections['appSwitcher'] = altTab.AppSwitcher;
+  altTab.AppSwitcher = GObject.registerClass(
+  class CurrentMonitorAppSwitcher extends altTab.AppSwitcher {
     _addIcon(icon) {
-      if (!enabled) {
-        return super._addIcon.apply(this, arguments);
-      }
-
-      l('CurrentMonitorAppSwitcher _addIcon');
-
-      icon.cachedWindows = icon.cachedWindows.filter(w => w.get_monitor() === global.display.get_current_monitor());
-
-      if(icon.cachedWindows.length === 0)
+      icon.cachedWindows = icon.cachedWindows.filter(w => w.get_monitor() === getCurrentMonitor());
+      if(icon.cachedWindows.length === 0){
         return;
-
+      }
       return super._addIcon.call(this, icon);
     }
   });
 }
 
-function load_older() {
-  l('loading code for older versions');
+function disable_3_32(){
+  altTab.getWindows = injections['getWindows'];
+  altTab.WindowSwitcherPopup = injections['windowSwitcherPopup'];
+  altTab.AppSwitcherPopup = injections['appSwitcherPopup'];
+  altTab.AppSwitcher = injections['appSwitcher'];
+}
 
-  injections['_getWindowList'] = AltTab.WindowSwitcherPopup.prototype._getWindowList;
-  AltTab.WindowSwitcherPopup.prototype._getWindowList = function() {
+/*******************************
+ *   gnome-shell < 3.32        *
+ *******************************/
+
+function enable_older() {
+  injections['_getWindowList'] = altTab.windowSwitcherPopup.prototype._getWindowList;
+  altTab.windowSwitcherPopup.prototype._getWindowList = function() {
     let allWindows = injections['_getWindowList'].apply(this, arguments);
-
-    if (!enabled) {
-      return allWindows;
-    }
-
-    return allWindows.filter(w => w.get_monitor() === global.display.get_current_monitor());
+    return allWindows.filter(w => w.get_monitor() === getCurrentMonitor());
   }
 
-  injections['_getPreferredWidth'] = AltTab.WindowSwitcherPopup.prototype._getPreferredWidth;
-  AltTab.WindowSwitcherPopup.prototype._getPreferredWidth = function() {
-    if (!enabled) {
-      return injections['_getPreferredWidth'].apply(this, arguments);
-    }
-
-    let originalPrimaryMonitor = Main.layoutManager.primaryMonitor;
-    Main.layoutManager.primaryMonitor = Main.layoutManager.currentMonitor;
-
+  injections['_getPreferredWidth'] = altTab.windowSwitcherPopup.prototype._getPreferredWidth;
+  altTab.windowSwitcherPopup.prototype._getPreferredWidth = function() {
+    let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+    main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
     let response = injections['_getPreferredWidth'].apply(this, arguments);
-
-    Main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-
+    main.layoutManager.primaryMonitor = originalPrimaryMonitor;
     return response;
   }
 
-  injections['_getPreferredHeight'] = AltTab.WindowSwitcherPopup.prototype._getPreferredHeight;
-  AltTab.WindowSwitcherPopup.prototype._getPreferredHeight = function() {
-    if (!enabled) {
-      return injections['_getPreferredHeight'].apply(this, arguments);
-    }
-
-    let originalPrimaryMonitor = Main.layoutManager.primaryMonitor;
-    Main.layoutManager.primaryMonitor = Main.layoutManager.currentMonitor;
-
+  injections['_getPreferredHeight'] = altTab.windowSwitcherPopup.prototype._getPreferredHeight;
+  altTab.windowSwitcherPopup.prototype._getPreferredHeight = function() {
+    let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+    main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
     let response = injections['_getPreferredHeight'].apply(this, arguments);
-
-    Main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-
+    main.layoutManager.primaryMonitor = originalPrimaryMonitor;
     return response;
   }
 
-  injections['_allocate'] = AltTab.WindowSwitcherPopup.prototype._allocate;
-  AltTab.WindowSwitcherPopup.prototype._allocate = function() {
-    if (!enabled) {
-      return injections['_allocate'].apply(this, arguments);
-    }
-
-    let originalPrimaryMonitor = Main.layoutManager.primaryMonitor;
-    Main.layoutManager.primaryMonitor = Main.layoutManager.currentMonitor;
-
+  injections['_allocate'] = altTab.windowSwitcherPopup.prototype._allocate;
+  altTab.windowSwitcherPopup.prototype._allocate = function() {
+    let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+    main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
     let response = injections['_allocate'].apply(this, arguments);
-
-    Main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-
+    main.layoutManager.primaryMonitor = originalPrimaryMonitor;
     return response;
   }
 
-  injections['_addIcon'] = AltTab.AppSwitcher.prototype._addIcon;
-  AltTab.AppSwitcher.prototype._addIcon = function(icon) {
-    if (!enabled) {
-      return injections['_addIcon'].apply(this, arguments);
-    }
-
-    icon.cachedWindows = icon.cachedWindows.filter(w => w.get_monitor() === global.display.get_current_monitor());
-
-    if(icon.cachedWindows.length === 0)
+  injections['_addIcon'] = altTab.AppSwitcher.prototype._addIcon;
+  altTab.AppSwitcher.prototype._addIcon = function(icon) {
+    icon.cachedWindows = icon.cachedWindows.filter(w => w.get_monitor() === getCurrentMonitor());
+    if(icon.cachedWindows.length === 0) {
       return;
-
+    }
     return injections['_addIcon'].call(this, icon);
   }
 }
 
-function init() {
-  l('extension init');
-
-  if (loaded) {
-    return;
-  }
-
-  loaded = true;
-
-  l('shell version', Config.PACKAGE_VERSION);
-
-  if (checkMiniumShellVersion('3.32')) {
-    load_3_32();
-  } else {
-    load_older();
-  }
+function disable_older(){
+  altTab.windowSwitcherPopup.prototype._getWindowList = injections['_getWindowList'];
+  altTab.windowSwitcherPopup.prototype._getPreferredWidth = injections['_getPreferredWidth'];
+  altTab.windowSwitcherPopup.prototype._getPreferredHeight = injections['_getPreferredHeight'];
+  altTab.windowSwitcherPopup.prototype._allocate = injections['_allocate'];
+  altTab.AppSwitcher.prototype._addIcon = injections['_addIcon'];
 }
 
-function enable() {
-  enabled = true;
-}
+/*******************************
+ *           utils             *
+ *******************************/
 
-function disable() {
-  enabled = false;
-}
-
-function checkMiniumShellVersion(requiredVersion) {
-  let requiredArray = requiredVersion.split('.');
-  let currentArray = Config.PACKAGE_VERSION.split('.');
-
-  for (let i = 0; i < requiredArray.length; i++) {
-    if (currentArray[i] == undefined) {
-      currentArray[i] = '0';
-    }
-
-    let currentPart = parseInt(currentArray[i], 10);
-    let requiredPart = parseInt(requiredArray[i], 10);
-
-    if (currentPart > requiredPart) {
-      return true;
-    }
-
-    if (currentPart < requiredPart) {
-      return false;
-    }
+function getCurrentMonitor(){
+  if (cmpVersions(PACKAGE_VERSION, '3.30') < 0){
+    return global.screen.get_current_monitor();
   }
+  return global.display.get_current_monitor();
+}
 
-  return true;
+function cmpVersions (a, b) {
+    var i, diff;
+    var regExStrip0 = /(\.0+)+$/;
+    var segmentsA = a.replace(regExStrip0, '').split('.');
+    var segmentsB = b.replace(regExStrip0, '').split('.');
+    var l = Math.min(segmentsA.length, segmentsB.length);
+
+    for (i = 0; i < l; i++) {
+        diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
+        if (diff) {
+            return diff;
+        }
+    }
+    return segmentsA.length - segmentsB.length;
 }
