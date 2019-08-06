@@ -33,9 +33,9 @@ function enable_3_32() {
     return allWindows.filter(w => w.get_monitor() === getCurrentMonitor());
   }
 
-  injections['windowSwitcherPopup'] = altTab.WindowSwitcherPopup;
-  altTab.windowSwitcherPopup = GObject.registerClass(
-  class CurrentMonitorWindowSwitcherPopup extends altTab.windowSwitcherPopup {
+  injections['WindowSwitcherPopup'] = altTab.WindowSwitcherPopup;
+  altTab.WindowSwitcherPopup = GObject.registerClass(
+  class CurrentMonitorWindowSwitcherPopup extends altTab.WindowSwitcherPopup {
     vfunc_allocate() {
       let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
       main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
@@ -72,7 +72,7 @@ function enable_3_32() {
 
 function disable_3_32(){
   altTab.getWindows = injections['getWindows'];
-  altTab.WindowSwitcherPopup = injections['windowSwitcherPopup'];
+  altTab.WindowSwitcherPopup = injections['WindowSwitcherPopup'];
   altTab.AppSwitcherPopup = injections['appSwitcherPopup'];
   altTab.AppSwitcher = injections['appSwitcher'];
 }
@@ -82,14 +82,14 @@ function disable_3_32(){
  *******************************/
 
 function enable_older() {
-  injections['_getWindowList'] = altTab.windowSwitcherPopup.prototype._getWindowList;
-  altTab.windowSwitcherPopup.prototype._getWindowList = function() {
+  injections['_getWindowList'] = altTab.WindowSwitcherPopup.prototype._getWindowList;
+  altTab.WindowSwitcherPopup.prototype._getWindowList = function() {
     let allWindows = injections['_getWindowList'].apply(this, arguments);
     return allWindows.filter(w => w.get_monitor() === getCurrentMonitor());
   }
 
-  injections['_getPreferredWidth'] = altTab.windowSwitcherPopup.prototype._getPreferredWidth;
-  altTab.windowSwitcherPopup.prototype._getPreferredWidth = function() {
+  injections['_getPreferredWidth'] = altTab.WindowSwitcherPopup.prototype._getPreferredWidth;
+  altTab.WindowSwitcherPopup.prototype._getPreferredWidth = function() {
     let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
     main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
     let response = injections['_getPreferredWidth'].apply(this, arguments);
@@ -97,8 +97,8 @@ function enable_older() {
     return response;
   }
 
-  injections['_getPreferredHeight'] = altTab.windowSwitcherPopup.prototype._getPreferredHeight;
-  altTab.windowSwitcherPopup.prototype._getPreferredHeight = function() {
+  injections['_getPreferredHeight'] = altTab.WindowSwitcherPopup.prototype._getPreferredHeight;
+  altTab.WindowSwitcherPopup.prototype._getPreferredHeight = function() {
     let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
     main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
     let response = injections['_getPreferredHeight'].apply(this, arguments);
@@ -106,8 +106,8 @@ function enable_older() {
     return response;
   }
 
-  injections['_allocate'] = altTab.windowSwitcherPopup.prototype._allocate;
-  altTab.windowSwitcherPopup.prototype._allocate = function() {
+  injections['_allocate'] = altTab.WindowSwitcherPopup.prototype._allocate;
+  altTab.WindowSwitcherPopup.prototype._allocate = function() {
     let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
     main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
     let response = injections['_allocate'].apply(this, arguments);
@@ -126,10 +126,10 @@ function enable_older() {
 }
 
 function disable_older(){
-  altTab.windowSwitcherPopup.prototype._getWindowList = injections['_getWindowList'];
-  altTab.windowSwitcherPopup.prototype._getPreferredWidth = injections['_getPreferredWidth'];
-  altTab.windowSwitcherPopup.prototype._getPreferredHeight = injections['_getPreferredHeight'];
-  altTab.windowSwitcherPopup.prototype._allocate = injections['_allocate'];
+  altTab.WindowSwitcherPopup.prototype._getWindowList = injections['_getWindowList'];
+  altTab.WindowSwitcherPopup.prototype._getPreferredWidth = injections['_getPreferredWidth'];
+  altTab.WindowSwitcherPopup.prototype._getPreferredHeight = injections['_getPreferredHeight'];
+  altTab.WindowSwitcherPopup.prototype._allocate = injections['_allocate'];
   altTab.AppSwitcher.prototype._addIcon = injections['_addIcon'];
 }
 
