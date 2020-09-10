@@ -4,7 +4,17 @@ const PACKAGE_VERSION = imports.misc.config.PACKAGE_VERSION;
 const altTab = imports.ui.altTab;
 const main = imports.ui.main;
 
+let CurrentMonitorWindowSwitcherPopup;
+let CurrentMonitorAppSwitcherPopup;
+let CurrentMonitorAppSwitcher;
+
 let injections = {};
+
+function init() {
+  if (PACKAGE_VERSION >= '3.32') {
+    init_3_32();
+  }
+}
 
 function enable() {
   if (cmpVersions(PACKAGE_VERSION, '3.32') < 0){
@@ -19,55 +29,65 @@ function disable() {
     disable_older();
   } else {
     disable_3_32();
-  } 
+  }
 }
 
 /*******************************
  *   gnome-shell >= 3.32       *
  *******************************/
 
-function enable_3_32() {
-  injections['getWindows'] = altTab.getWindows;
-  altTab.getWindows = function() {
+function getCurrentMonitorWindows() {
     let allWindows = injections['getWindows'].apply(this, arguments);
     return allWindows.filter(w => w.get_monitor() === getCurrentMonitor());
-  }
+}
+
+function init_3_32() {
+  CurrentMonitorWindowSwitcherPopup = GObject.registerClass(
+    class CurrentMonitorWindowSwitcherPopup extends altTab.WindowSwitcherPopup {
+      vfunc_allocate() {
+        let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+        main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
+        let response = super.vfunc_allocate.apply(this, arguments);
+        main.layoutManager.primaryMonitor = originalPrimaryMonitor;
+        return response;
+      }
+  });
+
+  CurrentMonitorAppSwitcherPopup = GObject.registerClass(
+    class CurrentMonitorAppSwitcherPopup extends altTab.AppSwitcherPopup {
+      vfunc_allocate() {
+        let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
+        main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
+        let response = super.vfunc_allocate.apply(this, arguments);
+        main.layoutManager.primaryMonitor = originalPrimaryMonitor;
+        return response;
+      }
+  });
+
+  CurrentMonitorAppSwitcher = GObject.registerClass(
+    class CurrentMonitorAppSwitcher extends altTab.AppSwitcher {
+      _addIcon(icon) {
+        icon.cachedWindows = icon.cachedWindows.filter(w => w.get_monitor() === getCurrentMonitor());
+        if(icon.cachedWindows.length === 0) {
+          return;
+        }
+        return super._addIcon.call(this, icon);
+      }
+  });
+}
+
+function enable_3_32() {
+  injections['getWindows'] = altTab.getWindows;
+  altTab.getWindows = getCurrentMonitorWindows;
 
   injections['WindowSwitcherPopup'] = altTab.WindowSwitcherPopup;
-  altTab.WindowSwitcherPopup = GObject.registerClass(
-  class CurrentMonitorWindowSwitcherPopup extends altTab.WindowSwitcherPopup {
-    vfunc_allocate() {
-      let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
-      main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
-      let response = super.vfunc_allocate.apply(this, arguments);
-      main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-      return response;
-    }
-  });
+  altTab.WindowSwitcherPopup = CurrentMonitorWindowSwitcherPopup;
 
   injections['appSwitcherPopup'] = altTab.AppSwitcherPopup;
-  altTab.AppSwitcherPopup = GObject.registerClass(
-  class CurrentMonitorAppSwitcherPopup extends altTab.AppSwitcherPopup {
-    vfunc_allocate() {
-      let originalPrimaryMonitor = main.layoutManager.primaryMonitor;
-      main.layoutManager.primaryMonitor = main.layoutManager.currentMonitor;
-      let response = super.vfunc_allocate.apply(this, arguments);
-      main.layoutManager.primaryMonitor = originalPrimaryMonitor;
-      return response;
-    }
-  });
+  altTab.AppSwitcherPopup = CurrentMonitorAppSwitcherPopup;
 
   injections['appSwitcher'] = altTab.AppSwitcher;
-  altTab.AppSwitcher = GObject.registerClass(
-  class CurrentMonitorAppSwitcher extends altTab.AppSwitcher {
-    _addIcon(icon) {
-      icon.cachedWindows = icon.cachedWindows.filter(w => w.get_monitor() === getCurrentMonitor());
-      if(icon.cachedWindows.length === 0){
-        return;
-      }
-      return super._addIcon.call(this, icon);
-    }
-  });
+  altTab.AppSwitcher = CurrentMonitorAppSwitcher;
 }
 
 function disable_3_32(){
