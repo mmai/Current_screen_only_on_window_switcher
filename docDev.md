@@ -7,7 +7,7 @@ Disable :
 Reload :
 `gnome-shell-extension-tool -r Current_screen_only_for_Alternate_Tab@bourcereau.fr`
 
-Look at errors with `journalctl -f`
+Look at errors with `journalctl /usr/bin/gnome-shell -fo cat | grep "Current_screen_only"`
 
 Looking glass :
 ALT-F2 lg -> extensions -> show errors

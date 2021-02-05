@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DIR=Current_screen_only_for_Alternate_Tab@bourcereau.fr
 
