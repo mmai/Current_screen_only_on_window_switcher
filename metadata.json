@@ -3,5 +3,5 @@
   "description": "Limits the windows shown on the switcher to those of the current monitor",
   "url": "https://github.com/mmai/Current_screen_only_on_window_switcher",
   "uuid": "Current_screen_only_for_Alternate_Tab@bourcereau.fr",
-  "shell-version": ["3.30","3.32", "40", "41", "42", "43"]
+  "shell-version": ["40", "41", "42", "43"]
 }
