@@ -1,5 +1,10 @@
 # Current screen only in windows switcher
 
+This extension is only compatible with gnome versions from 3.23 to 44.
+For gnome 45 and later versions, you can use the [AATWS](https://extensions.gnome.org/extension/4412/advanced-alttab-window-switcher/) extension.
+
+----
+
 This is a Gnome Shell extension.
 
 It filters the windows shown in the window switcher to those of the current monitor.
